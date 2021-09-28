@@ -5,6 +5,30 @@
     <TargetFramework>net5.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <RootNamespace>Haruby.TartanPlaid</RootNamespace>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="images\Add_16x.png" />
+    <None Remove="images\Cancel_16x.png" />
+    <None Remove="images\CollapseUp_16x.png" />
+    <None Remove="images\Copy_16x.png" />
+    <None Remove="images\ExpandDown_16x.png" />
+    <None Remove="images\MoveGlyph_16x.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="images\Add_16x.png" />
+    <Resource Include="images\Cancel_16x.png" />
+    <Resource Include="images\CollapseUp_16x.png" />
+    <Resource Include="images\Copy_16x.png" />
+    <Resource Include="images\ExpandDown_16x.png" />
+    <Resource Include="images\MoveGlyph_16x.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
 
 </Project>
