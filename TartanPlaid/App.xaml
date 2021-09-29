@@ -5,11 +5,15 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
 
-        <Style TargetType="Window">
+        <Style x:Key="WindowStyle" TargetType="Window">
             <Setter Property="FontSize" Value="16" />
         </Style>
 
-        <Style TargetType="ListBox">
+        <Style TargetType="Menu">
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+
+        <Style TargetType="{x:Type local:ListBox}">
             <Setter Property="ItemContainerStyle">
                 <Setter.Value>
                     <Style TargetType="ListBoxItem">

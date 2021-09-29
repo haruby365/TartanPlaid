@@ -1,0 +1,10 @@
+﻿[*.cs]
+
+# CA1805: 불필요한 초기화를 수행하지 마세요.
+dotnet_diagnostic.CA1805.severity = none
+
+dotnet_diagnostic.IDE0058.severity = none
+dotnet_diagnostic.IDE0060.severity = none
+dotnet_diagnostic.IDE0130.severity = none
+
+dotnet_code_quality_unused_parameters=silent

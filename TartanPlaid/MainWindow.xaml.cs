@@ -36,13 +36,15 @@ namespace Haruby.TartanPlaid
 
         // Haruby Tartan Plaid proJect
         public const string FileExtension = "htpj";
-        static readonly string FileFilter = $"Haruby Tartan Plaid Project|*.{FileExtension}";
+        public static readonly string FileFilter = $"HARUBY Tartan Plaid Project|*.{FileExtension}";
 
         public int MaxUndoRedoCount { get; set; } = 100;
 
         private bool historyLock = false;
 
         private readonly LinkedList<HistoryState> undoStack = new(), redoStack = new();
+
+        private AboutWindow? aboutWindow;
 
         private readonly string title;
 
@@ -130,6 +132,7 @@ namespace Haruby.TartanPlaid
                 return;
             }
 
+            CurrentFile = new(dialog.FileName);
             Tartan = tartan;
         }
 
@@ -137,7 +140,7 @@ namespace Haruby.TartanPlaid
         {
             FrameworkElement element = (FrameworkElement)sender;
             Spool spool = (Spool)element.Tag;
-            ColorWindow colorWindow = new() { Owner = this, SelectedColor = spool.Color, };
+            ColorWindow colorWindow = new() { Owner = this, SelectedColor = spool.Color, OtherColors = Tartan.Spools.Select(s => s.Color).Distinct().Select(c => new ColorItem(c)).ToArray(), };
             if (colorWindow.ShowDialog() is not true)
             {
                 return;
@@ -161,6 +164,20 @@ namespace Haruby.TartanPlaid
                 int index = spools.IndexOf(anchor);
                 spools.Insert(index, new(spool));
             }
+        }
+
+        private void SpoolDecreaseButton_Click(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement element = (FrameworkElement)sender;
+            Spool spool = (Spool)element.Tag;
+            spool.Count--;
+        }
+
+        private void SpoolIncreaseButton_Click(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement element = (FrameworkElement)sender;
+            Spool spool = (Spool)element.Tag;
+            spool.Count++;
         }
 
         private void SpoolDeleteButton_Click(object sender, RoutedEventArgs e)
@@ -280,38 +297,52 @@ namespace Haruby.TartanPlaid
                 return;
             }
 
-            RenderTargetBitmap bitmap;
+            Cursor = Cursors.Wait;
             try
             {
-                bitmap = Render(MainCanvas);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Unexpected error occured.\nFailed to render image.\n\n" + ex, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
+                RenderTargetBitmap bitmap;
+                try
+                {
+                    bitmap = Render(MainCanvas);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Unexpected error occured.\nFailed to render image.\n\n" + ex, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
-            PngBitmapEncoder encoder = new();
-            try
-            {
-                encoder.Frames.Add(BitmapFrame.Create(bitmap));
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Unexpected error occured.\nFailed to create image.\n\n" + ex, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
+                PngBitmapEncoder encoder = new();
+                try
+                {
+                    encoder.Frames.Add(BitmapFrame.Create(bitmap));
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Unexpected error occured.\nFailed to create image.\n\n" + ex, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
-            try
-            {
-                using Stream stream = File.Create(dialog.FileName);
-                encoder.Save(stream);
+                try
+                {
+                    using Stream stream = File.Create(dialog.FileName);
+                    encoder.Save(stream);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Unexpected error occured.\nFailed to write file.\n\n" + ex, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                MessageBox.Show("Unexpected error occured.\nFailed to write file.\n\n" + ex, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
+                Cursor = Cursors.Arrow;
             }
+        }
+
+        private void AboutMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            aboutWindow ??= new() { Owner = this, };
+            aboutWindow.Show();
         }
 
         private void TakeHistory()
@@ -388,15 +419,20 @@ namespace Haruby.TartanPlaid
                 return;
             }
             MainCanvas.Children.Clear();
-            double size = CreateTartanView(Tartan, MainCanvas, 10d, 3);
+            double size = CreateTartanView(Tartan, MainCanvas);
             MainCanvas.Width = MainCanvas.Height = size;
+        }
+
+        private bool IsSafeCloseCurrent()
+        {
+            HistoryState? state = CurrentHistoryState;
+            return state is null || state == lastSavedState;
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
-            HistoryState? state = CurrentHistoryState;
-            if (state is null || state == lastSavedState)
+            if (IsSafeCloseCurrent())
             {
                 return;
             }
@@ -415,10 +451,14 @@ namespace Haruby.TartanPlaid
             }
         }
 
-        public static double CreateTartanView(Tartan tartan, Canvas canvas, double unitWidth, int repeat)
+        public static double CreateTartanView(Tartan tartan, Canvas canvas)
         {
+            TartanSettings settings = tartan.Settings ?? TartanSettings.Default;
+            int unitWidth = settings.UnitWidth;
+            int repeat = settings.Repeat;
+
             int patternCount = tartan.Spools.Sum(s => s.Count);
-            double patternSize = patternCount * unitWidth;
+            double patternSize = patternCount * unitWidth * 2;
             double totalSize = patternSize * repeat;
 
             void ForEach(Action<Spool, double, double> action)
@@ -427,6 +467,12 @@ namespace Haruby.TartanPlaid
                 {
                     double location = patternSize * i;
                     foreach (Spool spool in tartan.Spools)
+                    {
+                        double size = unitWidth * spool.Count;
+                        action(spool, location, size);
+                        location += size;
+                    }
+                    foreach (Spool spool in tartan.Spools.Reverse())
                     {
                         double size = unitWidth * spool.Count;
                         action(spool, location, size);
@@ -457,11 +503,11 @@ namespace Haruby.TartanPlaid
             return totalSize;
         }
 
-        public static RenderTargetBitmap Render(Canvas canvas)
+        public static RenderTargetBitmap Render(FrameworkElement element)
         {
-            DpiScale dpiScale = VisualTreeHelper.GetDpi(canvas);
-            RenderTargetBitmap bitmap = new((int)canvas.Width, (int)canvas.Height, dpiScale.PixelsPerInchX, dpiScale.PixelsPerInchY, PixelFormats.Pbgra32);
-            bitmap.Render(canvas);
+            DpiScale dpiScale = VisualTreeHelper.GetDpi(element);
+            RenderTargetBitmap bitmap = new((int)element.ActualWidth, (int)element.ActualHeight, dpiScale.PixelsPerInchX, dpiScale.PixelsPerInchY, PixelFormats.Pbgra32);
+            bitmap.Render(element);
             return bitmap;
         }
 
@@ -536,6 +582,35 @@ namespace Haruby.TartanPlaid
             Redo(1);
         }
 
+        private void SettingsCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            SettingsWindow settingsWindow = new() { Owner = this, SelectedSettings = Tartan.Settings, };
+            if (settingsWindow.ShowDialog() is not true)
+            {
+                return;
+            }
+            Tartan.Settings = settingsWindow.SelectedSettings;
+        }
+
+        private void NewCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (!IsSafeCloseCurrent())
+            {
+                MessageBoxResult result = MessageBox.Show("Any unsaved states will be lost.\nWould you want to save before creating new?", "New", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                {
+                    if (!Save(false).Result)
+                    {
+                        return;
+                    }
+                }
+                else if(result == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
+            }
+            Tartan = new();
+        }
         private void OpenCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             Open();
@@ -547,6 +622,11 @@ namespace Haruby.TartanPlaid
         private void SaveAsCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             Save(true);
+        }
+
+        static MainWindow()
+        {
+            ToolTipService.ShowDurationProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(int.MaxValue));
         }
     }
 }

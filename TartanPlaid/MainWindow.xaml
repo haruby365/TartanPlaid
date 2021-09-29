@@ -5,17 +5,21 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Haruby.TartanPlaid"
         mc:Ignorable="d"
-        Title="HARUBY Tartan Plaid" Height="450" Width="800" WindowStartupLocation="CenterScreen"
+        Style="{StaticResource WindowStyle}"
+        WindowStartupLocation="CenterScreen"
+        Title="HARUBY Tartan Plaid" Height="900" Width="1600"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Window.Resources>
         <local:ColorToSolidColorBrushConverter x:Key="ColorToBrushConverter" />
     </Window.Resources>
     <Window.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.New" CanExecute="AlwaysCommandBinding_CanExecute" Executed="NewCommandBinding_Executed" />
         <CommandBinding Command="ApplicationCommands.Open" CanExecute="AlwaysCommandBinding_CanExecute" Executed="OpenCommandBinding_Executed" />
         <CommandBinding Command="ApplicationCommands.Save" CanExecute="AlwaysCommandBinding_CanExecute" Executed="SaveCommandBinding_Executed" />
         <CommandBinding Command="ApplicationCommands.SaveAs" CanExecute="AlwaysCommandBinding_CanExecute" Executed="SaveAsCommandBinding_Executed" />
         <CommandBinding Command="ApplicationCommands.Undo" CanExecute="UndoCommandBinding_CanExecute" Executed="UndoCommandBinding_Executed" />
         <CommandBinding Command="ApplicationCommands.Redo" CanExecute="RedoCommandBinding_CanExecute" Executed="RedoCommandBinding_Executed" />
+        <CommandBinding Command="ApplicationCommands.Properties" CanExecute="AlwaysCommandBinding_CanExecute" Executed="SettingsCommandBinding_Executed" />
     </Window.CommandBindings>
     <Grid>
         <Grid.RowDefinitions>
@@ -25,6 +29,7 @@
 
         <Menu Grid.Row="0">
             <MenuItem Header="File">
+                <MenuItem Header="New" Command="ApplicationCommands.New" />
                 <MenuItem Header="Open" Command="ApplicationCommands.Open" />
                 <MenuItem Header="Save" Command="ApplicationCommands.Save" />
                 <MenuItem Header="Save As..." Command="ApplicationCommands.SaveAs" />
@@ -36,12 +41,17 @@
             <MenuItem Header="Edit">
                 <MenuItem Header="Undo" Command="ApplicationCommands.Undo" />
                 <MenuItem Header="Redo" Command="ApplicationCommands.Redo" />
+                <Separator />
+                <MenuItem Header="Settings" Command="ApplicationCommands.Properties" />
+            </MenuItem>
+            <MenuItem Header="Help">
+                <MenuItem Header="About HARUBY Tartan Plaid" Click="AboutMenuItem_Click" />
             </MenuItem>
         </Menu>
         
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="300" />
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
@@ -52,7 +62,7 @@
                     <RowDefinition Height="30" />
                 </Grid.RowDefinitions>
 
-                <ListBox Grid.Column="0" Name="SpoolsListBox" ItemsSource="{Binding Tartan.Spools}">
+                <local:ListBox Grid.Column="0" x:Name="SpoolsListBox" ItemsSource="{Binding Tartan.Spools}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid AllowDrop="True" Drop="SpoolGrid_Drop" Tag="{Binding}">
@@ -70,28 +80,85 @@
                                     <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="2" />
                                 </Grid.ColumnDefinitions>
 
-                                <Image Grid.Row="1" Grid.Column="1" Source="/images/MoveGlyph_16x.png" Tag="{Binding}" MouseDown="SpoolMoveImage_MouseDown" />
-                                <Button Grid.Row="1" Grid.Column="2" Background="{Binding Color, Converter={StaticResource ColorToBrushConverter}}" Tag="{Binding}" Click="SpoolColorButton_Click" />
-                                <TextBox Grid.Row="1" Grid.Column="3" VerticalContentAlignment="Center" Text="{Binding Count}" />
-                                <Button Grid.Row="1" Grid.Column="4" Tag="{Binding}" Click="SpoolCopyButton_Click">
+                                <Image Grid.Row="1" Grid.Column="1" Source="/images/MoveGlyph_16x.png" Tag="{Binding}" MouseDown="SpoolMoveImage_MouseDown">
+                                    <Image.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>Drag to move this spool.</TextBlock>
+                                        </ToolTip>
+                                    </Image.ToolTip>
+                                </Image>
+                                <Button Grid.Row="1" Grid.Column="2" Background="{Binding Color, Converter={StaticResource ColorToBrushConverter}}" Tag="{Binding}" Click="SpoolColorButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>Click to change color of this spool.</TextBlock>
+                                        </ToolTip>
+                                    </Button.ToolTip>
+                                </Button>
+                                <Button Grid.Row="1" Grid.Column="3" Tag="{Binding}" Click="SpoolDecreaseButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>Decrease thread count.</TextBlock>
+                                        </ToolTip>
+                                    </Button.ToolTip>
+                                    -
+                                </Button>
+                                <TextBox Grid.Row="1" Grid.Column="4" VerticalAlignment="Center" Text="{Binding Count}">
+                                    <TextBox.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>Set thread count of this spool.</TextBlock>
+                                        </ToolTip>
+                                    </TextBox.ToolTip>
+                                </TextBox>
+                                <Button Grid.Row="1" Grid.Column="5" Tag="{Binding}" Click="SpoolIncreaseButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>Increase thread count.</TextBlock>
+                                        </ToolTip>
+                                    </Button.ToolTip>
+                                    +
+                                </Button>
+                                <Button Grid.Row="1" Grid.Column="6" Tag="{Binding}" Click="SpoolCopyButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>Copy this spool.<LineBreak />
+                                                TIP: Select an existing spool to add new spool at that place.</TextBlock>
+                                        </ToolTip>
+                                    </Button.ToolTip>
                                     <Image Source="/images/Copy_16x.png" />
                                 </Button>
-                                <Button Grid.Row="1" Grid.Column="5" Tag="{Binding}" Click="SpoolDeleteButton_Click">
+                                <Button Grid.Row="1" Grid.Column="7" Tag="{Binding}" Click="SpoolDeleteButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>Remove this spool.</TextBlock>
+                                        </ToolTip>
+                                    </Button.ToolTip>
                                     <Image Source="/images/Cancel_16x.png" />
                                 </Button>
-                                <Button Grid.Row="1" Grid.Column="6" Tag="{Binding}" Click="SpoolUpButton_Click">
+                                <Button Grid.Row="1" Grid.Column="8" Tag="{Binding}" Click="SpoolUpButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>Move one step up this spool.</TextBlock>
+                                        </ToolTip>
+                                    </Button.ToolTip>
                                     <Image Source="/images/CollapseUp_16x.png" />
                                 </Button>
-                                <Button Grid.Row="1" Grid.Column="7" Tag="{Binding}" Click="SpoolDownButton_Click">
+                                <Button Grid.Row="1" Grid.Column="9" Tag="{Binding}" Click="SpoolDownButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>Move one step down this spool.</TextBlock>
+                                        </ToolTip>
+                                    </Button.ToolTip>
                                     <Image Source="/images/ExpandDown_16x.png" />
                                 </Button>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
-                </ListBox>
+                </local:ListBox>
 
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
@@ -100,6 +167,12 @@
                     </Grid.ColumnDefinitions>
 
                     <Button Grid.Column="0" Click="AddSpoolButton_Click">
+                        <Button.ToolTip>
+                            <ToolTip>
+                                <TextBlock>Add a new spool.<LineBreak />
+                                TIP: Select an existing spool to add new spool at that place.</TextBlock>
+                            </ToolTip>
+                        </Button.ToolTip>
                         <Image Source="/images/Add_16x.png" />
                     </Button>
                 </Grid>
@@ -108,7 +181,7 @@
             <GridSplitter Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
 
             <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible">
-                <Canvas x:Name="MainCanvas" />
+                <Canvas x:Name="MainCanvas" HorizontalAlignment="Left" VerticalAlignment="Top" />
             </ScrollViewer>
         </Grid>
     </Grid>

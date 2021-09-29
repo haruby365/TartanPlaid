@@ -3,54 +3,103 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Haruby.TartanPlaid"
+        xmlns:local="clr-namespace:Haruby.TartanPlaid" xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
         mc:Ignorable="d"
-        Title="Color" Height="250" Width="400" WindowStartupLocation="CenterOwner"
+        Style="{StaticResource WindowStyle}"
+        Title="Color" Height="500" Width="600" WindowStartupLocation="CenterOwner"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Window.Resources>
         <local:ColorToSolidColorBrushConverter x:Key="ColorToBrushConverter" />
+        <local:ColorStateToSolidColorBrushConverter x:Key="ColorStateToBrushConverter" />
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="20" />
-            <RowDefinition Height="80"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="20"/>
+            <RowDefinition />
             <RowDefinition Height="60" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="1" Margin="2">
+        <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition Width="80" />
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-
-            <Border Grid.Column="1" BorderThickness="1" BorderBrush="Black">
-                <Rectangle Fill="{Binding SelectedColor, Converter={StaticResource ColorToBrushConverter}}" />
-            </Border>
-        </Grid>
-
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="120" />
+                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Margin="2" TextAlignment="Right" VerticalAlignment="Center">Hex</TextBlock>
-            <TextBox Grid.Column="1" Name="HexTextBox" Margin="2" VerticalAlignment="Center" Text="{Binding InputHexText}" />
+            <local:ListBox x:Name="OtherColorsListBox" ItemsSource="{Binding OtherColors}" SelectionChanged="OtherColorsListBox_SelectionChanged">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2" />
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="2" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="2" />
+                                <RowDefinition Height="30" />
+                                <RowDefinition Height="2" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="1" Grid.Column="1" BorderThickness="1" BorderBrush="Black">
+                                <Rectangle Fill="{Binding Color, Converter={StaticResource ColorToBrushConverter}}"/>
+                            </Border>
+                            <TextBlock Grid.Row="1" Grid.Column="2" Margin="4, 0" VerticalAlignment="Center" Text="{Binding Hex}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </local:ListBox>
+
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="20" />
+                    <RowDefinition Height="200"/>
+                    <RowDefinition Height="10"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="10"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="1" Margin="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="30" />
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="200" />
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="30" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*" />
+                        <RowDefinition Height="30" />
+                        <RowDefinition Height="2*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="1" Grid.Column="1" BorderThickness="1" BorderBrush="Black">
+                        <Rectangle Fill="{Binding ColorState, Converter={StaticResource ColorStateToBrushConverter}}" />
+                    </Border>
+
+                    <colorpicker:SquarePicker Grid.Row="0" Grid.RowSpan="3" Grid.Column="3" ColorState="{Binding ColorState, Mode=TwoWay, Delay=10}" />
+                </Grid>
+
+                <colorpicker:HexColorTextBox Grid.Row="3" FontSize="13" ShowAlpha="False" ColorState="{Binding ColorState, Mode=TwoWay, Delay=10}" />
+
+                <colorpicker:ColorSliders Grid.Row="5" FontSize="13" ShowAlpha="False" ColorState="{Binding ColorState, Mode=TwoWay, Delay=10}" />
+            </Grid>
         </Grid>
 
-        <Grid Grid.Row="4" Margin="0,20,0,0" Grid.RowSpan="2">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="120" />
                 <ColumnDefinition Width="120" />
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="1" IsDefault="True" Click="AcceptButton_Click">OK</Button>
-            <Button Grid.Column="2" IsCancel="True">Cancel</Button>
+            <Button Grid.Column="1" IsDefault="True" Margin="2" Click="AcceptButton_Click">OK</Button>
+            <Button Grid.Column="2" IsCancel="True" Margin="2">Cancel</Button>
         </Grid>
     </Grid>
 </Window>

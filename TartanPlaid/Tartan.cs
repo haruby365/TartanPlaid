@@ -13,8 +13,14 @@ namespace Haruby.TartanPlaid
         public static readonly DependencyProperty SpoolsProperty = DependencyProperty.Register(
             nameof(Spools), typeof(ObservableCollection<Spool>), typeof(Tartan), new PropertyMetadata(PropertyChangedHandler));
 
+        public static readonly DependencyProperty SettingsProperty = DependencyProperty.Register(
+            nameof(Settings), typeof(TartanSettings), typeof(Tartan), new PropertyMetadata(TartanSettings.Default, PropertyChangedHandler));
+
         [JsonProperty]
         public ObservableCollection<Spool> Spools { get => (ObservableCollection<Spool>)GetValue(SpoolsProperty); private set => SetValue(SpoolsProperty, value); }
+
+        [JsonProperty]
+        public TartanSettings Settings { get => (TartanSettings)GetValue(SettingsProperty); set => SetValue(SettingsProperty, value); }
 
         public Tartan()
         {

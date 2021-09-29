@@ -1,7 +1,10 @@
 ﻿// © 2021 Jong-il Hong
 
+using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
+using ColorPicker.Models;
 
 namespace Haruby.TartanPlaid
 {
@@ -10,15 +13,30 @@ namespace Haruby.TartanPlaid
     /// </summary>
     public partial class ColorWindow : Window
     {
-        public static readonly DependencyProperty SelectedColorProperty = DependencyProperty.Register(
-            nameof(SelectedColor), typeof(Color), typeof(ColorWindow), new PropertyMetadata(Colors.Black));
+        public static readonly DependencyProperty OtherColorsProperty = DependencyProperty.Register(
+            nameof(OtherColors), typeof(IReadOnlyList<ColorItem>), typeof(ColorWindow), new PropertyMetadata(Array.Empty<ColorItem>()));
 
-        public static readonly DependencyProperty InputHexTextProperty = DependencyProperty.Register(
-            nameof(InputHexText), typeof(string), typeof(ColorWindow));
+        public static readonly DependencyProperty ColorStateProperty = DependencyProperty.Register(
+            nameof(ColorState), typeof(ColorState), typeof(ColorWindow));
 
-        public Color SelectedColor { get => (Color)GetValue(SelectedColorProperty); set => SetValue(SelectedColorProperty, value); }
+        public Color SelectedColor
+        {
+            get
+            {
+                ColorState colorState = ColorState;
+                return Color.FromArgb(byte.MaxValue, (byte)(colorState.RGB_R * byte.MaxValue), (byte)(colorState.RGB_G * byte.MaxValue), (byte)(colorState.RGB_B * byte.MaxValue));
+            }
+            set
+            {
+                ColorState colorState = new();
+                colorState.SetARGB(1d, value.R / (double)byte.MaxValue, value.G / (double)byte.MaxValue, value.B / (double)byte.MaxValue);
+                ColorState = colorState;
+            }
+        }
 
-        private string InputHexText { get => (string)GetValue(InputHexTextProperty); set => SetValue(InputHexTextProperty, value); }
+        public IReadOnlyList<ColorItem> OtherColors { get => (IReadOnlyList<ColorItem>)GetValue(OtherColorsProperty); set => SetValue(OtherColorsProperty, value); }
+
+        private ColorState ColorState { get => (ColorState)GetValue(ColorStateProperty); set => SetValue(ColorStateProperty, value); }
 
         public ColorWindow()
         {
@@ -27,46 +45,19 @@ namespace Haruby.TartanPlaid
             SelectedColor = Colors.White;
         }
 
-        private void AcceptButton_Click(object sender, RoutedEventArgs e)
+        private void OtherColorsListBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            DialogResult = true;
-        }
-
-        private void OnSelectedColorChanged(Color prev, Color next)
-        {
-            HexTextBox.Text = $"#{next.R:x2}{next.G:x2}{next.B:x2}";
-        }
-        private void OnInputHexTextChanged(string prev, string next)
-        {
-            if (string.IsNullOrEmpty(next))
+            ColorItem? colorItem = (ColorItem?)OtherColorsListBox.SelectedItem;
+            if (colorItem is null)
             {
                 return;
             }
-            if (next[0] != '#')
-            {
-                next = '#' + next;
-            }
-            try
-            {
-                SelectedColor = (Color)ColorConverter.ConvertFromString(next);
-            }
-            catch
-            {
-
-            }
+            SelectedColor = colorItem.Color;
         }
 
-        protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+        private void AcceptButton_Click(object sender, RoutedEventArgs e)
         {
-            base.OnPropertyChanged(e);
-            if (e.Property == SelectedColorProperty)
-            {
-                OnSelectedColorChanged((Color)e.OldValue, (Color)e.NewValue);
-            }
-            else if (e.Property == InputHexTextProperty)
-            {
-                OnInputHexTextChanged((string)e.OldValue, (string)e.NewValue);
-            }
+            DialogResult = true;
         }
     }
 }
