@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -153,17 +152,22 @@ namespace Haruby.TartanPlaid
             FrameworkElement element = (FrameworkElement)sender;
             Spool spool = (Spool)element.Tag;
 
+            IReadOnlyList<Spool> spools = Tartan.Spools;
+            List<Spool> dest = new(spools.Count + 1);
+            dest.AddRange(spools);
+
             Spool? anchor = (Spool?)SpoolsListBox.SelectedItem;
             if (anchor is null)
             {
-                Tartan.Spools.Add(new(spool));
+                dest.Add(new(spool));
             }
             else
             {
-                ObservableCollection<Spool> spools = Tartan.Spools;
-                int index = spools.IndexOf(anchor);
-                spools.Insert(index, new(spool));
+                int index = dest.IndexOf(anchor);
+                dest.Insert(index, new(spool));
             }
+
+            Tartan.Spools = dest;
         }
 
         private void SpoolDecreaseButton_Click(object sender, RoutedEventArgs e)
@@ -184,22 +188,32 @@ namespace Haruby.TartanPlaid
         {
             FrameworkElement element = (FrameworkElement)sender;
             Spool spool = (Spool)element.Tag;
-            Tartan.Spools.Remove(spool);
+
+            IReadOnlyList<Spool> spools = Tartan.Spools;
+            List<Spool> dest = new(spools.Count);
+            dest.AddRange(from s in spools where s != spool select s);
+
+            Tartan.Spools = dest;
         }
 
         private void AddSpoolButton_Click(object sender, RoutedEventArgs e)
         {
+            IReadOnlyList<Spool> spools = Tartan.Spools;
+            List<Spool> dest = new(spools.Count);
+            dest.AddRange(spools);
+
             Spool? anchor = (Spool?)SpoolsListBox.SelectedItem;
             if (anchor is null)
             {
-                Tartan.Spools.Add(new());
+                dest.Add(new());
             }
             else
             {
-                ObservableCollection<Spool> spools = Tartan.Spools;
-                int index = spools.IndexOf(anchor);
-                spools.Insert(index, new());
+                int index = dest.IndexOf(anchor);
+                dest.Insert(index, new());
             }
+
+            Tartan.Spools = dest;
         }
 
         private void SpoolUpButton_Click(object sender, RoutedEventArgs e)
@@ -207,23 +221,20 @@ namespace Haruby.TartanPlaid
             FrameworkElement element = (FrameworkElement)sender;
             Spool spool = (Spool)element.Tag;
 
-            ObservableCollection<Spool> spools = Tartan.Spools;
-            int index = spools.IndexOf(spool);
-            if (index > 0)
-            {
-                try
-                {
-                    historyLock = true;
+            IReadOnlyList<Spool> spools = Tartan.Spools;
+            List<Spool> dest = new(spools.Count);
+            dest.AddRange(spools);
 
-                    spools.RemoveAt(index);
-                    spools.Insert(index - 1, spool);
-                }
-                finally
-                {
-                    historyLock = false;
-                    ManualUpdated();
-                }
+            int index = dest.IndexOf(spool);
+            if (index <= 0)
+            {
+                return;
             }
+
+            dest.RemoveAt(index);
+            dest.Insert(index - 1, spool);
+
+            Tartan.Spools = dest;
         }
 
         private void SpoolDownButton_Click(object sender, RoutedEventArgs e)
@@ -231,23 +242,20 @@ namespace Haruby.TartanPlaid
             FrameworkElement element = (FrameworkElement)sender;
             Spool spool = (Spool)element.Tag;
 
-            ObservableCollection<Spool> spools = Tartan.Spools;
-            int index = spools.IndexOf(spool);
-            if (index < spools.Count - 1)
-            {
-                try
-                {
-                    historyLock = true;
+            IReadOnlyList<Spool> spools = Tartan.Spools;
+            List<Spool> dest = new(spools.Count);
+            dest.AddRange(spools);
 
-                    spools.RemoveAt(index);
-                    spools.Insert(index + 1, spool);
-                }
-                finally
-                {
-                    historyLock = false;
-                    ManualUpdated();
-                }
+            int index = dest.IndexOf(spool);
+            if (index >= dest.Count - 1)
+            {
+                return;
             }
+
+            dest.RemoveAt(index);
+            dest.Insert(index + 1, spool);
+
+            Tartan.Spools = dest;
         }
 
         private void SpoolMoveImage_MouseDown(object sender, MouseButtonEventArgs e)
@@ -266,20 +274,16 @@ namespace Haruby.TartanPlaid
             {
                 return;
             }
-            try
-            {
-                historyLock = true;
 
-                ObservableCollection<Spool> spools = Tartan.Spools;
-                int sourceIndex = spools.IndexOf(source), targetIndex = spools.IndexOf(spool);
-                spools.Remove(source);
-                spools.Insert(targetIndex, source);
-            }
-            finally
-            {
-                historyLock = false;
-                ManualUpdated();
-            }
+            IReadOnlyList<Spool> spools = Tartan.Spools;
+            List<Spool> dest = new(spools.Count);
+            dest.AddRange(spools);
+
+            int targetIndex = dest.IndexOf(spool);
+            dest.Remove(source);
+            dest.Insert(targetIndex, source);
+
+            Tartan.Spools = dest;
         }
 
         private void ExportPngMenuItem_Click(object sender, RoutedEventArgs e)
@@ -499,6 +503,7 @@ namespace Haruby.TartanPlaid
 
                 canvas.Children.Add(vertical);
             });
+            canvas.UpdateLayout();
 
             return totalSize;
         }
@@ -589,7 +594,14 @@ namespace Haruby.TartanPlaid
             {
                 return;
             }
-            Tartan.Settings = settingsWindow.SelectedSettings;
+
+            TartanSettings selected = settingsWindow.SelectedSettings;
+            if (selected.Equals(Tartan.Settings))
+            {
+                return;
+            }
+
+            Tartan.Settings = selected;
         }
 
         private void NewCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
@@ -604,7 +616,7 @@ namespace Haruby.TartanPlaid
                         return;
                     }
                 }
-                else if(result == MessageBoxResult.Cancel)
+                else if (result == MessageBoxResult.Cancel)
                 {
                     return;
                 }

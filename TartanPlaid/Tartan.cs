@@ -1,7 +1,9 @@
 ﻿// © 2021 Jong-il Hong
 
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Windows;
 using Newtonsoft.Json;
 
@@ -11,70 +13,39 @@ namespace Haruby.TartanPlaid
     public class Tartan : PropertyNotifyObject
     {
         public static readonly DependencyProperty SpoolsProperty = DependencyProperty.Register(
-            nameof(Spools), typeof(ObservableCollection<Spool>), typeof(Tartan), new PropertyMetadata(PropertyChangedHandler));
+            nameof(Spools), typeof(IReadOnlyList<Spool>), typeof(Tartan), new PropertyMetadata(Array.Empty<Spool>(), PropertyChangedHandler));
 
         public static readonly DependencyProperty SettingsProperty = DependencyProperty.Register(
             nameof(Settings), typeof(TartanSettings), typeof(Tartan), new PropertyMetadata(TartanSettings.Default, PropertyChangedHandler));
 
         [JsonProperty]
-        public ObservableCollection<Spool> Spools { get => (ObservableCollection<Spool>)GetValue(SpoolsProperty); private set => SetValue(SpoolsProperty, value); }
+        public IReadOnlyList<Spool> Spools { get => (IReadOnlyList<Spool>)GetValue(SpoolsProperty); set => SetValue(SpoolsProperty, value); }
 
         [JsonProperty]
         public TartanSettings Settings { get => (TartanSettings)GetValue(SettingsProperty); set => SetValue(SettingsProperty, value); }
-
-        public Tartan()
-        {
-            Spools = new();
-        }
-
-        public Tartan(Tartan other)
-        {
-            if (other is null)
-            {
-                throw new ArgumentNullException(nameof(other));
-            }
-            Spools = new();
-            foreach (Spool item in other.Spools)
-            {
-                Spools.Add(new(item));
-            }
-        }
-
-        private void Spools_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            if (e.NewItems is not null)
-            {
-                foreach (Spool item in e.NewItems)
-                {
-                    item.PropertyChanged += Item_PropertyChanged;
-                }
-            }
-            if (e.OldItems is not null)
-            {
-                foreach (Spool item in e.OldItems)
-                {
-                    item.PropertyChanged -= Item_PropertyChanged;
-                }
-            }
-            OnPropertyChanged(new System.ComponentModel.PropertyChangedEventArgs(nameof(Spools)));
-        }
 
         private void Item_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             OnPropertyChanged(e);
         }
 
-        private void OnSpoolsChanged(ObservableCollection<Spool> prev, ObservableCollection<Spool> next)
+        private void OnSpoolsChanged(IReadOnlyList<Spool> prev, IReadOnlyList<Spool> next)
         {
             if (prev is not null)
             {
-                prev.CollectionChanged -= Spools_CollectionChanged;
+                foreach (Spool item in prev)
+                {
+                    item.PropertyChanged -= Item_PropertyChanged;
+                }
             }
             if (next is null)
             {
                 throw new InvalidOperationException("New spools is null.");
             }
-            next.CollectionChanged += Spools_CollectionChanged;
+            foreach (Spool item in next)
+            {
+                item.PropertyChanged += Item_PropertyChanged;
+            }
         }
 
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
@@ -82,18 +53,28 @@ namespace Haruby.TartanPlaid
             base.OnPropertyChanged(e);
             if (e.Property == SpoolsProperty)
             {
-                OnSpoolsChanged((ObservableCollection<Spool>)e.OldValue, (ObservableCollection<Spool>)e.NewValue);
+                OnSpoolsChanged((IReadOnlyList<Spool>)e.OldValue, (IReadOnlyList<Spool>)e.NewValue);
             }
         }
 
         public string Serialize()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
         public void Deserialize(string json)
         {
-            Spools = new();
-            JsonConvert.PopulateObject(json, this);
+            Tartan tartan = (Tartan?)JsonConvert.DeserializeObject(json, typeof(Tartan)) ?? throw new InvalidOperationException("Deserialized null.");
+            foreach (PropertyInfo info in JsonProperties)
+            {
+                object? v = info.GetValue(tartan);
+                info.SetValue(this, v);
+            }
+        }
+
+        private static readonly IReadOnlyList<PropertyInfo> JsonProperties;
+        static Tartan()
+        {
+            JsonProperties = typeof(Tartan).GetProperties().Where(p => p.GetCustomAttribute<JsonPropertyAttribute>() is not null).ToList();
         }
     }
 }

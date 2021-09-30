@@ -12,6 +12,9 @@
     <Window.Resources>
         <local:ColorToSolidColorBrushConverter x:Key="ColorToBrushConverter" />
     </Window.Resources>
+    <Window.InputBindings>
+        <KeyBinding Gesture="Control+Shift+Z" Command="ApplicationCommands.Redo" />
+    </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.New" CanExecute="AlwaysCommandBinding_CanExecute" Executed="NewCommandBinding_Executed" />
         <CommandBinding Command="ApplicationCommands.Open" CanExecute="AlwaysCommandBinding_CanExecute" Executed="OpenCommandBinding_Executed" />

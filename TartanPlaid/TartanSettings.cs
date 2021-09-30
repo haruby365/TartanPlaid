@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace Haruby.TartanPlaid
 {
-    public class TartanSettings
+    public record TartanSettings
     {
         public static readonly TartanSettings Default = new(10, 3);
 
