@@ -9,6 +9,14 @@
     <LangVersion>latest</LangVersion>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <Win32Resource />
+    <Version>1.1.0</Version>
+    <Authors>HARUBY</Authors>
+    <Company>HARUBY</Company>
+    <Product>HARUBY Tartan Plaid</Product>
+    <PackageId>HARUBY Tartan Plaid</PackageId>
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryUrl></RepositoryUrl>
+    <Copyright>© 2021 Jong-il Hong</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
