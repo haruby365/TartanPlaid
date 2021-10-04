@@ -45,3 +45,9 @@ Please check tool-tips in the name text.
 
 1. Click top menu **File**, select **Export** and select any of image file.  
 Finally export the tartan to an image file.
+
+Demos
+---
+
+Please check [demos folder](https://gitlab.com/haruby365/TartanPlaid/-/tree/master/demos).  
+Download `htpj` file and open it from the application.
