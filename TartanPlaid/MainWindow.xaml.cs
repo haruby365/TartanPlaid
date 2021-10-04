@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -26,9 +27,12 @@ namespace Haruby.TartanPlaid
             nameof(CurrentFile), typeof(FileInfo), typeof(MainWindow));
         public static readonly DependencyProperty TartanProperty = DependencyProperty.Register(
             nameof(Tartan), typeof(Tartan), typeof(MainWindow));
+        public static readonly DependencyProperty IsEditedProperty = DependencyProperty.Register(
+            nameof(IsEdited), typeof(bool), typeof(MainWindow));
 
-        public FileInfo CurrentFile { get => (FileInfo)GetValue(CurrentFileProperty); private set => SetValue(CurrentFileProperty, value); }
+        public FileInfo? CurrentFile { get => (FileInfo)GetValue(CurrentFileProperty); private set => SetValue(CurrentFileProperty, value); }
         public Tartan Tartan { get => (Tartan)GetValue(TartanProperty); private set => SetValue(TartanProperty, value); }
+        public bool IsEdited { get => (bool)GetValue(IsEditedProperty); private set => SetValue(IsEditedProperty, value); }
 
         public HistoryState? CurrentHistoryState => undoStack.Last?.Value;
         private HistoryState? lastSavedState = null;
@@ -51,12 +55,27 @@ namespace Haruby.TartanPlaid
         {
             Tartan = new();
 
+            {
+                InputGestureCollection gestureCollection = ApplicationCommands.Redo.InputGestures;
+                InputGesture? originalGesture = null;
+                if (gestureCollection.Count > 0)
+                {
+                    originalGesture = gestureCollection[0];
+                }
+                gestureCollection.Clear();
+                gestureCollection.Add(new KeyGesture(Key.Z, ModifierKeys.Control | ModifierKeys.Shift));
+                if (originalGesture is not null)
+                {
+                    gestureCollection.Add(originalGesture);
+                }
+            }
+
             InitializeComponent();
 
             title = Title;
         }
 
-        private Task<bool> Save(bool selectFile)
+        private Task<bool> Save(bool selectFile, bool allowMainThreadDispatch)
         {
             if (selectFile || CurrentFile is null)
             {
@@ -79,7 +98,10 @@ namespace Haruby.TartanPlaid
 
             return Task.Run(() =>
             {
-                Dispatcher.Invoke(() => Cursor = Cursors.AppStarting);
+                if (allowMainThreadDispatch)
+                {
+                    Dispatcher.Invoke(() => Cursor = Cursors.AppStarting);
+                }
                 try
                 {
                     File.WriteAllText(fileInfo.FullName, state.Json);
@@ -92,11 +114,15 @@ namespace Haruby.TartanPlaid
                 }
                 finally
                 {
-                    Dispatcher.Invoke(() =>
+                    if (allowMainThreadDispatch)
                     {
-                        Cursor = Cursors.Arrow;
-                        lastSavedState = state;
-                    });
+                        Dispatcher.Invoke(() =>
+                        {
+                            Cursor = Cursors.Arrow;
+                            lastSavedState = state;
+                            IsEdited = false;
+                        });
+                    }
                 }
                 return true;
             });
@@ -135,16 +161,27 @@ namespace Haruby.TartanPlaid
             Tartan = tartan;
         }
 
+        private Color? OpenColorWindow(Color sourceColor)
+        {
+            ColorWindow colorWindow = new() { Owner = this, SelectedColor = sourceColor, OtherColors = Tartan.Spools.Select(s => s.Color).Distinct().Select(c => new ColorItem(c)).ToArray(), };
+            if (colorWindow.ShowDialog() is not true)
+            {
+                return null;
+            }
+            Color targetColor = colorWindow.SelectedColor;
+            return sourceColor == targetColor ? null : targetColor;
+        }
+
         private void SpoolColorButton_Click(object sender, RoutedEventArgs e)
         {
             FrameworkElement element = (FrameworkElement)sender;
             Spool spool = (Spool)element.Tag;
-            ColorWindow colorWindow = new() { Owner = this, SelectedColor = spool.Color, OtherColors = Tartan.Spools.Select(s => s.Color).Distinct().Select(c => new ColorItem(c)).ToArray(), };
-            if (colorWindow.ShowDialog() is not true)
+            Color? targetColor = OpenColorWindow(spool.Color);
+            if (targetColor is null)
             {
                 return;
             }
-            spool.Color = colorWindow.SelectedColor;
+            spool.Color = targetColor.Value;
         }
 
         private void SpoolCopyButton_Click(object sender, RoutedEventArgs e)
@@ -286,6 +323,34 @@ namespace Haruby.TartanPlaid
             Tartan.Spools = dest;
         }
 
+        private void SpoolSwapColorMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement element = (FrameworkElement)sender;
+            Spool spool = (Spool)element.Tag;
+            Color sourceColor = spool.Color;
+            Color? targetColor = OpenColorWindow(sourceColor);
+            if (targetColor is null)
+            {
+                return;
+            }
+            try
+            {
+                historyLock = true;
+                foreach (Spool s in Tartan.Spools)
+                {
+                    if (s == spool || s.Color == sourceColor)
+                    {
+                        s.Color = targetColor.Value;
+                    }
+                }
+            }
+            finally
+            {
+                historyLock = false;
+                ManualUpdated();
+            }
+        }
+
         private void ExportPngMenuItem_Click(object sender, RoutedEventArgs e)
         {
             Tartan tartan = Tartan;
@@ -360,6 +425,7 @@ namespace Haruby.TartanPlaid
 
             string json = Tartan.Serialize();
             undoStack.AddLast(new HistoryState(json));
+            IsEdited = true;
 
             while (undoStack.Count > MaxUndoRedoCount)
             {
@@ -408,6 +474,7 @@ namespace Haruby.TartanPlaid
             {
                 historyLock = false;
             }
+            IsEdited = state != lastSavedState;
         }
 
         private void ManualUpdated()
@@ -427,16 +494,10 @@ namespace Haruby.TartanPlaid
             MainCanvas.Width = MainCanvas.Height = size;
         }
 
-        private bool IsSafeCloseCurrent()
-        {
-            HistoryState? state = CurrentHistoryState;
-            return state is null || state == lastSavedState;
-        }
-
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
-            if (IsSafeCloseCurrent())
+            if (!IsEdited)
             {
                 return;
             }
@@ -444,7 +505,7 @@ namespace Haruby.TartanPlaid
             MessageBoxResult result = MessageBox.Show("Any unsaved states will be lost.\nWould you want to save before closing?", "Close", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
-                if (!Save(false).Result)
+                if (!Save(false, false).Result)
                 {
                     e.Cancel = true;
                 }
@@ -470,18 +531,19 @@ namespace Haruby.TartanPlaid
                 for (int i = 0; i < repeat; i++)
                 {
                     double location = patternSize * i;
-                    foreach (Spool spool in tartan.Spools)
+
+                    void Loop(IEnumerable<Spool> sources)
                     {
-                        double size = unitWidth * spool.Count;
-                        action(spool, location, size);
-                        location += size;
+                        foreach (Spool spool in sources)
+                        {
+                            double size = unitWidth * spool.Count;
+                            action(spool, location, size);
+                            location += size;
+                        }
                     }
-                    foreach (Spool spool in tartan.Spools.Reverse())
-                    {
-                        double size = unitWidth * spool.Count;
-                        action(spool, location, size);
-                        location += size;
-                    }
+
+                    Loop(tartan.Spools);
+                    Loop(tartan.Spools.Reverse());
                 }
             }
 
@@ -522,14 +584,23 @@ namespace Haruby.TartanPlaid
             UpdateTartanView();
         }
 
-        private void OnCurrentFileChanged(FileInfo? prev, FileInfo? next)
+        private void OnCurrentFileOrIsEditedChanged(FileInfo? currentFile, bool isEdited)
         {
-            string t = title;
-            if (next is not null)
+            StringBuilder builder = new(title);
+            if (currentFile is not null)
             {
-                t += " - " + next.FullName;
+                builder.Append(" - ");
+                builder.Append(currentFile.FullName);
             }
-            Title = t;
+            else
+            {
+                builder.Append(" - Untitled");
+            }
+            if (IsEdited)
+            {
+                builder.Append('*');
+            }
+            Title = builder.ToString();
         }
         private void OnTartanChanged(Tartan prev, Tartan next)
         {
@@ -549,14 +620,15 @@ namespace Haruby.TartanPlaid
             ClearHistory();
             ManualUpdated();
             lastSavedState = CurrentHistoryState;
+            IsEdited = false;
         }
 
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
         {
             base.OnPropertyChanged(e);
-            if (e.Property == CurrentFileProperty)
+            if (e.Property == CurrentFileProperty || e.Property == IsEditedProperty)
             {
-                OnCurrentFileChanged((FileInfo?)e.OldValue, (FileInfo?)e.NewValue);
+                OnCurrentFileOrIsEditedChanged(CurrentFile, IsEdited);
             }
             else if (e.Property == TartanProperty)
             {
@@ -606,12 +678,12 @@ namespace Haruby.TartanPlaid
 
         private void NewCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (!IsSafeCloseCurrent())
+            if (IsEdited)
             {
                 MessageBoxResult result = MessageBox.Show("Any unsaved states will be lost.\nWould you want to save before creating new?", "New", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
                 if (result == MessageBoxResult.Yes)
                 {
-                    if (!Save(false).Result)
+                    if (!Save(false, false).Result)
                     {
                         return;
                     }
@@ -622,6 +694,7 @@ namespace Haruby.TartanPlaid
                 }
             }
             Tartan = new();
+            CurrentFile = null;
         }
         private void OpenCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
         {
@@ -629,11 +702,11 @@ namespace Haruby.TartanPlaid
         }
         private void SaveCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            Save(false);
+            Save(false, true);
         }
         private void SaveAsCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            Save(true);
+            Save(true, true);
         }
 
         static MainWindow()

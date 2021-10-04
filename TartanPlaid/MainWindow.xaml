@@ -12,9 +12,6 @@
     <Window.Resources>
         <local:ColorToSolidColorBrushConverter x:Key="ColorToBrushConverter" />
     </Window.Resources>
-    <Window.InputBindings>
-        <KeyBinding Gesture="Control+Shift+Z" Command="ApplicationCommands.Redo" />
-    </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.New" CanExecute="AlwaysCommandBinding_CanExecute" Executed="NewCommandBinding_Executed" />
         <CommandBinding Command="ApplicationCommands.Open" CanExecute="AlwaysCommandBinding_CanExecute" Executed="OpenCommandBinding_Executed" />
@@ -98,9 +95,15 @@
                                 <Button Grid.Row="1" Grid.Column="2" Background="{Binding Color, Converter={StaticResource ColorToBrushConverter}}" Tag="{Binding}" Click="SpoolColorButton_Click">
                                     <Button.ToolTip>
                                         <ToolTip>
-                                            <TextBlock>Click to change color of this spool.</TextBlock>
+                                            <TextBlock>Click to change color of this spool.<LineBreak />
+                                            Right click to advanced options.</TextBlock>
                                         </ToolTip>
                                     </Button.ToolTip>
+                                    <Button.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Swap Color..." Tag="{Binding}" Click="SpoolSwapColorMenuItem_Click" />
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
                                 </Button>
                                 <Button Grid.Row="1" Grid.Column="3" Tag="{Binding}" Click="SpoolDecreaseButton_Click">
                                     <Button.ToolTip>
