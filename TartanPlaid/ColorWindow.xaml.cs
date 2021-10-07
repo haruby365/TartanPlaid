@@ -16,27 +16,18 @@ namespace Haruby.TartanPlaid
         public static readonly DependencyProperty OtherColorsProperty = DependencyProperty.Register(
             nameof(OtherColors), typeof(IReadOnlyList<ColorItem>), typeof(ColorWindow), new PropertyMetadata(Array.Empty<ColorItem>()));
 
-        public static readonly DependencyProperty ColorStateProperty = DependencyProperty.Register(
-            nameof(ColorState), typeof(ColorState), typeof(ColorWindow));
+        public static readonly DependencyProperty SourceColorStateProperty = DependencyProperty.Register(
+            nameof(SourceColorState), typeof(ColorState), typeof(ColorWindow));
+        public static readonly DependencyProperty SelectedColorStateProperty = DependencyProperty.Register(
+            nameof(SelectedColorState), typeof(ColorState), typeof(ColorWindow));
 
-        public Color SelectedColor
-        {
-            get
-            {
-                ColorState colorState = ColorState;
-                return Color.FromArgb(byte.MaxValue, (byte)(colorState.RGB_R * byte.MaxValue), (byte)(colorState.RGB_G * byte.MaxValue), (byte)(colorState.RGB_B * byte.MaxValue));
-            }
-            set
-            {
-                ColorState colorState = new();
-                colorState.SetARGB(1d, value.R / (double)byte.MaxValue, value.G / (double)byte.MaxValue, value.B / (double)byte.MaxValue);
-                ColorState = colorState;
-            }
-        }
+        public Color SourceColor { get => Util.ColorStateToRgb(SourceColorState); set => SourceColorState = Util.RgbToColorState(value); }
+        public Color SelectedColor { get => Util.ColorStateToRgb(SelectedColorState); set => SelectedColorState = Util.RgbToColorState(value); }
 
         public IReadOnlyList<ColorItem> OtherColors { get => (IReadOnlyList<ColorItem>)GetValue(OtherColorsProperty); set => SetValue(OtherColorsProperty, value); }
 
-        private ColorState ColorState { get => (ColorState)GetValue(ColorStateProperty); set => SetValue(ColorStateProperty, value); }
+        private ColorState SourceColorState { get => (ColorState)GetValue(SourceColorStateProperty); set => SetValue(SourceColorStateProperty, value); }
+        private ColorState SelectedColorState { get => (ColorState)GetValue(SelectedColorStateProperty); set => SetValue(SelectedColorStateProperty, value); }
 
         public ColorWindow()
         {

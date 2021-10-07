@@ -161,9 +161,9 @@ namespace Haruby.TartanPlaid
             Tartan = tartan;
         }
 
-        private Color? OpenColorWindow(Color sourceColor)
+        private Color? OpenColorWindow(string title, Color sourceColor)
         {
-            ColorWindow colorWindow = new() { Owner = this, SelectedColor = sourceColor, OtherColors = Tartan.Spools.Select(s => s.Color).Distinct().Select(c => new ColorItem(c)).ToArray(), };
+            ColorWindow colorWindow = new() { Owner = this, Title = title, SourceColor = sourceColor, SelectedColor = sourceColor, OtherColors = Tartan.Spools.Select(s => s.Color).Distinct().Select(c => new ColorItem(c)).ToArray(), };
             if (colorWindow.ShowDialog() is not true)
             {
                 return null;
@@ -176,7 +176,7 @@ namespace Haruby.TartanPlaid
         {
             FrameworkElement element = (FrameworkElement)sender;
             Spool spool = (Spool)element.Tag;
-            Color? targetColor = OpenColorWindow(spool.Color);
+            Color? targetColor = OpenColorWindow("Change Color", spool.Color);
             if (targetColor is null)
             {
                 return;
@@ -328,7 +328,7 @@ namespace Haruby.TartanPlaid
             FrameworkElement element = (FrameworkElement)sender;
             Spool spool = (Spool)element.Tag;
             Color sourceColor = spool.Color;
-            Color? targetColor = OpenColorWindow(sourceColor);
+            Color? targetColor = OpenColorWindow("Swap Color", sourceColor);
             if (targetColor is null)
             {
                 return;

@@ -65,7 +65,7 @@
                 <Grid Grid.Row="1" Margin="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
-                        <ColumnDefinition Width="30" />
+                        <ColumnDefinition Width="50" />
                         <ColumnDefinition Width="20"/>
                         <ColumnDefinition Width="200" />
                         <ColumnDefinition Width="20"/>
@@ -74,20 +74,29 @@
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="1*" />
+                        <RowDefinition Height="30"/>
                         <RowDefinition Height="30" />
                         <RowDefinition Height="2*" />
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="1" Grid.Column="1" BorderThickness="1" BorderBrush="Black">
-                        <Rectangle Fill="{Binding ColorState, Converter={StaticResource ColorStateToBrushConverter}}" />
+                    <Border Grid.Row="1" Grid.RowSpan="2" Grid.Column="1" BorderThickness="1" BorderBrush="Black">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+
+                            <Rectangle Grid.Row="0" Fill="{Binding SourceColorState, Converter={StaticResource ColorStateToBrushConverter}}" />
+                            <Rectangle Grid.Row="1" Fill="{Binding SelectedColorState, Converter={StaticResource ColorStateToBrushConverter}}" />
+                        </Grid>                        
                     </Border>
 
-                    <colorpicker:SquarePicker Grid.Row="0" Grid.RowSpan="3" Grid.Column="3" ColorState="{Binding ColorState, Mode=TwoWay, Delay=10}" />
+                    <colorpicker:SquarePicker Grid.Row="0" Grid.RowSpan="4" Grid.Column="3" ColorState="{Binding SelectedColorState, Mode=TwoWay, Delay=10}" />
                 </Grid>
 
-                <colorpicker:HexColorTextBox Grid.Row="3" FontSize="13" ShowAlpha="False" ColorState="{Binding ColorState, Mode=TwoWay, Delay=10}" />
+                <colorpicker:HexColorTextBox Grid.Row="3" FontSize="13" ShowAlpha="False" ColorState="{Binding SelectedColorState, Mode=TwoWay, Delay=10}" />
 
-                <colorpicker:ColorSliders Grid.Row="5" FontSize="13" ShowAlpha="False" ColorState="{Binding ColorState, Mode=TwoWay, Delay=10}" />
+                <colorpicker:ColorSliders Grid.Row="5" FontSize="13" ShowAlpha="False" ColorState="{Binding SelectedColorState, Mode=TwoWay, Delay=10}" />
             </Grid>
         </Grid>
 

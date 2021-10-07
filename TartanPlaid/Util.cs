@@ -1,8 +1,10 @@
 ﻿// © 2021 Jong-il Hong
 
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
+using ColorPicker.Models;
 
 namespace Haruby.TartanPlaid
 {
@@ -38,6 +40,19 @@ namespace Haruby.TartanPlaid
             }
             color = default;
             return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ColorState RgbToColorState(Color color)
+        {
+            ColorState colorState = default;
+            colorState.SetARGB(1d, color.R / (double)byte.MaxValue, color.G / (double)byte.MaxValue, color.B / (double)byte.MaxValue);
+            return colorState;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Color ColorStateToRgb(ColorState colorState)
+        {
+            return Color.FromRgb((byte)Math.Round(colorState.RGB_R * byte.MaxValue), (byte)Math.Round(colorState.RGB_G * byte.MaxValue), (byte)Math.Round(colorState.RGB_B * byte.MaxValue));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
