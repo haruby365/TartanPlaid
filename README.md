@@ -12,7 +12,7 @@ Therefore, it does not consider actual weaving or dyeing.
 Install
 ---
 
-1. Please check [release page](./../../releases) to download.
+1. Please check [latest release](./../../releases/latest) to download.
 1. Download attached `zip` file.
 1. Extract the `zip` file to a folder.
 1. Execute `exe` file in that folder.
