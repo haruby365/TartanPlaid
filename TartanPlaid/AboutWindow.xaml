@@ -10,17 +10,17 @@
         Title="About" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="20" />
+            <RowDefinition Height="10" />
             <RowDefinition Height="50" />
             <RowDefinition Height="30"/>
             <RowDefinition Height="80"/>
             <RowDefinition Height="1*" />
-            <RowDefinition Height="20" />
+            <RowDefinition Height="10" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="20" />
+            <ColumnDefinition Width="10" />
             <ColumnDefinition />
-            <ColumnDefinition Width="20" />
+            <ColumnDefinition Width="10" />
         </Grid.ColumnDefinitions>
 
         <TextBlock Grid.Row="1" Grid.Column="1" FontSize="30" VerticalAlignment="Top" FontWeight="Bold">HARUBY Tartan Plaid</TextBlock>
@@ -37,7 +37,7 @@
         
 
         <TextBlock Grid.Row="3" Grid.Column="1" VerticalAlignment="Top" TextWrapping="Wrap">This software has been developed by <Hyperlink RequestNavigate="Hyperlink_RequestNavigate" NavigateUri="https://www.haruby.com/">Jong-il Hong</Hyperlink> to create your own tartan and applying it to digital painting<LineBreak />
-            This software is <Hyperlink NavigateUri="https://gitlab.com/haruby365/TartanPlaid" RequestNavigate="Hyperlink_RequestNavigate">open source</Hyperlink> and totally <Bold>free</Bold> for using.</TextBlock>
+            This software is <Hyperlink NavigateUri="https://github.com/haruby365/TartanPlaid" RequestNavigate="Hyperlink_RequestNavigate">open source</Hyperlink> and totally <Bold>free</Bold> for using.</TextBlock>
 
         <TextBox x:Name="LicenseTextBox" IsReadOnly="True" Grid.Column="1" Grid.Row="4" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" />
     </Grid>
