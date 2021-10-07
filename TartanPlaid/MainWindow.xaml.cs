@@ -61,8 +61,8 @@ namespace Haruby.TartanPlaid
                 if (gestureCollection.Count > 0)
                 {
                     originalGesture = gestureCollection[0];
+                    gestureCollection.Clear();
                 }
-                gestureCollection.Clear();
                 gestureCollection.Add(new KeyGesture(Key.Z, ModifierKeys.Control | ModifierKeys.Shift));
                 if (originalGesture is not null)
                 {
