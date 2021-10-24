@@ -425,7 +425,6 @@ namespace Haruby.TartanPlaid
 
             string json = Tartan.Serialize();
             undoStack.AddLast(new HistoryState(json));
-            IsEdited = true;
 
             while (undoStack.Count > MaxUndoRedoCount)
             {
@@ -477,9 +476,15 @@ namespace Haruby.TartanPlaid
             IsEdited = state != lastSavedState;
         }
 
+        private void UpdateIsEdited()
+        {
+            IsEdited = CurrentHistoryState != lastSavedState;
+        }
+
         private void ManualUpdated()
         {
             TakeHistory();
+            UpdateIsEdited();
             UpdateTartanView();
         }
 
@@ -581,25 +586,27 @@ namespace Haruby.TartanPlaid
         private void Tartan_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             TakeHistory();
+            UpdateIsEdited();
             UpdateTartanView();
         }
 
         private void OnCurrentFileOrIsEditedChanged(FileInfo? currentFile, bool isEdited)
         {
-            StringBuilder builder = new(title);
+            StringBuilder builder = new();
+            if (isEdited)
+            {
+                builder.Append("● ");
+            }
             if (currentFile is not null)
             {
-                builder.Append(" - ");
-                builder.Append(currentFile.FullName);
+                builder.Append(System.IO.Path.GetFileName(currentFile.FullName));
             }
             else
             {
-                builder.Append(" - Untitled");
+                builder.Append("Untitled");
             }
-            if (IsEdited)
-            {
-                builder.Append('*');
-            }
+            builder.Append(" - ");
+            builder.Append(title);
             Title = builder.ToString();
         }
         private void OnTartanChanged(Tartan prev, Tartan next)
@@ -618,9 +625,10 @@ namespace Haruby.TartanPlaid
                 prev.PropertyChanged -= Tartan_PropertyChanged;
             }
             ClearHistory();
-            ManualUpdated();
+            TakeHistory();
             lastSavedState = CurrentHistoryState;
-            IsEdited = false;
+            UpdateIsEdited();
+            UpdateTartanView();
         }
 
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
@@ -698,6 +706,21 @@ namespace Haruby.TartanPlaid
         }
         private void OpenCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
         {
+            if (IsEdited)
+            {
+                MessageBoxResult result = MessageBox.Show("Any unsaved states will be lost.\nWould you want to save before open?", "Open", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                {
+                    if (!Save(false, false).Result)
+                    {
+                        return;
+                    }
+                }
+                else if (result == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
+            }
             Open();
         }
         private void SaveCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
