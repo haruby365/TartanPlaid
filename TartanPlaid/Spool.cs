@@ -1,6 +1,5 @@
 ﻿// © 2021 Jong-il Hong
 
-using System;
 using System.Windows;
 using System.Windows.Media;
 using Newtonsoft.Json;

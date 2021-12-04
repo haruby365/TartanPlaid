@@ -1,6 +1,5 @@
 ﻿// © 2021 Jong-il Hong
 
-using System;
 using System.Windows;
 
 namespace Haruby.TartanPlaid

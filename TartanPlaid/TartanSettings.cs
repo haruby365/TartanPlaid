@@ -1,6 +1,5 @@
 ﻿// © 2021 Jong-il Hong
 
-using System;
 using Newtonsoft.Json;
 
 namespace Haruby.TartanPlaid

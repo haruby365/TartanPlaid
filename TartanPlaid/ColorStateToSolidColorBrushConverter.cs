@@ -1,6 +1,5 @@
 ﻿// © 2021 Jong-il Hong
 
-using System;
 using System.Windows.Data;
 using System.Windows.Media;
 using ColorPicker.Models;

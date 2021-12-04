@@ -1,7 +1,5 @@
 ﻿// © 2021 Jong-il Hong
 
-using System;
-
 namespace Haruby.TartanPlaid
 {
     public class HistoryState

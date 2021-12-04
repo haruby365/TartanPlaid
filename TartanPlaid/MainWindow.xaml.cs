@@ -1,13 +1,8 @@
 ﻿// © 2021 Jong-il Hong
 
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -71,6 +66,11 @@ namespace Haruby.TartanPlaid
             }
 
             InitializeComponent();
+
+            {
+                Config config = LoadConfig();
+                ConfigUtil.InitWindowState(this, config.MainWindowState, WindowStartupLocation);
+            }
 
             title = Title;
         }
@@ -502,22 +502,26 @@ namespace Haruby.TartanPlaid
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
-            if (!IsEdited)
-            {
-                return;
-            }
 
-            MessageBoxResult result = MessageBox.Show("Any unsaved states will be lost.\nWould you want to save before closing?", "Close", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
-            if (result == MessageBoxResult.Yes)
+            if (IsEdited)
             {
-                if (!Save(false, false).Result)
+                MessageBoxResult result = MessageBox.Show("Any unsaved states will be lost.\nWould you want to save before closing?", "Close", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                {
+                    if (!Save(false, false).Result)
+                    {
+                        e.Cancel = true;
+                    }
+                }
+                else if (result == MessageBoxResult.Cancel)
                 {
                     e.Cancel = true;
                 }
             }
-            else if (result == MessageBoxResult.Cancel)
+
+            if (!e.Cancel)
             {
-                e.Cancel = true;
+                SaveConfig(true);
             }
         }
 
@@ -732,9 +736,32 @@ namespace Haruby.TartanPlaid
             Save(true, true);
         }
 
+        void SaveConfig(bool mainWindowState)
+        {
+            Config config = LoadConfig();
+            if (mainWindowState)
+            {
+                config.MainWindowState = ConfigUtil.GetWindowState(this);
+            }
+            SaveConfig(config);
+        }
+
         static MainWindow()
         {
             ToolTipService.ShowDurationProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(int.MaxValue));
+        }
+
+        public Config LoadConfig()
+        {
+            return ConfigUtil.Load<Config>(GetType(), ConfigType.Global);
+        }
+        public bool SaveConfig(Config config)
+        {
+            return ConfigUtil.Save(GetType(), ConfigType.Global, config);
+        }
+        public string GetConfigFilePath()
+        {
+            return ConfigUtil.GetConfigFilePath(GetType(), ConfigType.Global);
         }
     }
 }

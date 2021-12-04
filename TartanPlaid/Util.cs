@@ -1,7 +1,7 @@
 ﻿// © 2021 Jong-il Hong
 
-using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 using ColorPicker.Models;
@@ -59,6 +59,43 @@ namespace Haruby.TartanPlaid
         public static void OpenSystemWebBrowser(string uri)
         {
             Process.Start(new ProcessStartInfo(uri) { UseShellExecute = true, });
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void CreateDirectories(string directory)
+        {
+            CreateDirectories(new DirectoryInfo(directory));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void CreateDirectories(DirectoryInfo directory)
+        {
+            if (directory is null)
+            {
+                throw new ArgumentNullException(nameof(directory));
+            }
+
+            Stack<DirectoryInfo> dirs = new();
+            DirectoryInfo? dir = directory;
+            while (dir is not null && !dir.Exists)
+            {
+                dirs.Push(dir);
+                dir = dir.Parent;
+            }
+            while (dirs.Count > 0)
+            {
+                dirs.Pop().Create();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void CreateFileDirectories(string file)
+        {
+            CreateFileDirectories(new FileInfo(file));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void CreateFileDirectories(FileInfo file)
+        {
+            CreateDirectories(file.Directory ?? throw new ArgumentException("File has not directory."));
         }
     }
 }
